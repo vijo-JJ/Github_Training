@@ -3,11 +3,45 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/dialog'],
+
+
+
+
+/******************************************************************************
+********
+ * ABC Industries
+ *
+ * ${OTP-1111}: ${jj_cs_assessment_minimum quantity check.js}
+ *
+ *
+ ******************************************************************************
+********
+ *
+ * Author: Jobin and Jismi IT Services
+ *
+ * Date Created : 24-September-2026
+ *
+ * Description : Create a custom item field "Minimum Order Qty" (integer) on the item record. On the Sales Order, when a user commits a line, check that the quantity is at least the item's minimum order quantity. If it is lower, show an alert with the item name and the minimum required, and don't allow the line to be added. If the item has no minimum set, skip the check.
+ *
+ * REVISION HISTORY
+ *
+ * @version 2.0  ABC-5 : 24-September-2026 : Created the initial build by JJI0045
+ *
+ * 
+ *
+ *
+ ******************************************************************************
+*********/
+
+
+
+
+
+define(['N/search','N/ui/dialog'],
 /**
- * @param{dialog} dialog
+ * @param{search} search
  */
-function(dialog) {
+function(search,dialog) {
     
     /**
      * Function to be executed after page is initialized.
@@ -34,46 +68,9 @@ function(dialog) {
      *
      * @since 2015.2
      */
-function fieldChanged(scriptContext) {
-  
-    if (scriptContext.fieldId === 'location' && !scriptContext.sublistId) {
-        
+    function fieldChanged(scriptContext) {
 
-        const location = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-        const lineCount = scriptContext.currentRecord.getLineCount({ sublistId: 'item' });
-        
-       
-        for (var i = 0; i < lineCount; i++) {
-           
-            scriptContext.currentRecord.selectLine({
-                sublistId: 'item',
-                line: i
-            });
-            scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                value: location,
-                ignoreFieldChange: true
-            });
-            
-            scriptContext.currentRecord.commitLine({
-                sublistId: 'item'
-            });
-        }
-     
-
-      
-   }
-  
-  
-}
-
-
-
-
-
+    }
 
     /**
      * Function to be executed when field is slaved.
@@ -86,12 +83,8 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function postSourcing(scriptContext) {
-        
+
     }
-
-
-
-
 
     /**
      * Function to be executed after sublist is inserted, removed, or edited.
@@ -149,7 +142,34 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function validateLine(scriptContext) {
-
+        if (scriptContext.sublistId === 'item'){
+            const lineQuantity = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'quantity'
+            });
+            const itemId = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'item'
+            });
+            const itemData = search.lookupFields({
+                type: search.Type.INVENTORY_ITEM,
+                id: itemId,
+                columns: ['custitem4']
+            });
+            const minimumQty = itemData.custitem4
+            if (minimumQty){
+            
+                if(lineQuantity < minimumQty){
+                    dialog.alert({
+                        title: 'Validation Error',
+                        message: 'quantity must be atlest '+ minimumQty
+                    });
+                    return false;
+                }
+                
+            }
+        }
+        return true;
     }
 
     /**
@@ -192,50 +212,20 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        const bodyLocation = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-
-        const lineCount = scriptContext.currentRecord.getLineCount({
-            sublistId: 'item'
-        });
-
-        for (var i = 0; i < lineCount; i++) {
-            
-            const lineLocation = scriptContext.currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                line: i
-            });
-
-            if (lineLocation !== bodyLocation) {
-                dialog.alert({
-                    title: 'Invalid loaction',
-                    message: 'line location must be same as body location'
-                    });
-                return false;
-            }
-
-            
-        }
-
-        return true;
-
-
 
     }
 
     return {
         // pageInit: pageInit,
-        fieldChanged: fieldChanged,
+        // fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
         // validateField: validateField,
-        // validateLine: validateLine,
+        validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });

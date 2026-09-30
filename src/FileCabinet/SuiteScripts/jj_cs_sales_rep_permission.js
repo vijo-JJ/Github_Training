@@ -34,46 +34,9 @@ function(dialog) {
      *
      * @since 2015.2
      */
-function fieldChanged(scriptContext) {
-  
-    if (scriptContext.fieldId === 'location' && !scriptContext.sublistId) {
-        
+    function fieldChanged(scriptContext) {
 
-        const location = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-        const lineCount = scriptContext.currentRecord.getLineCount({ sublistId: 'item' });
-        
-       
-        for (var i = 0; i < lineCount; i++) {
-           
-            scriptContext.currentRecord.selectLine({
-                sublistId: 'item',
-                line: i
-            });
-            scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                value: location,
-                ignoreFieldChange: true
-            });
-            
-            scriptContext.currentRecord.commitLine({
-                sublistId: 'item'
-            });
-        }
-     
-
-      
-   }
-  
-  
-}
-
-
-
-
-
+    }
 
     /**
      * Function to be executed when field is slaved.
@@ -86,12 +49,8 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function postSourcing(scriptContext) {
-        
+
     }
-
-
-
-
 
     /**
      * Function to be executed after sublist is inserted, removed, or edited.
@@ -192,49 +151,30 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        const bodyLocation = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
+        const totalAmount = scriptContext.currentRecord.getValue({
+            fieldId:'total'
         });
+        if(totalAmount < 10000){
 
-        const lineCount = scriptContext.currentRecord.getLineCount({
-            sublistId: 'item'
-        });
-
-        for (var i = 0; i < lineCount; i++) {
-            
-            const lineLocation = scriptContext.currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                line: i
-            });
-
-            if (lineLocation !== bodyLocation) {
-                dialog.alert({
-                    title: 'Invalid loaction',
-                    message: 'line location must be same as body location'
-                    });
-                return false;
-            }
-
-            
+            const proceed = confirm('sales under 10000 need permission from sales rep');
+            return proceed;
         }
-
+        if(!proceed){
+            return false;
+        }
         return true;
-
-
-
     }
 
     return {
-        // pageInit: pageInit,
+        pageInit: pageInit,
         fieldChanged: fieldChanged,
-        // postSourcing: postSourcing,
-        // sublistChanged: sublistChanged,
-        // lineInit: lineInit,
-        // validateField: validateField,
-        // validateLine: validateLine,
-        // validateInsert: validateInsert,
-        // validateDelete: validateDelete,
+        postSourcing: postSourcing,
+        sublistChanged: sublistChanged,
+        lineInit: lineInit,
+        validateField: validateField,
+        validateLine: validateLine,
+        validateInsert: validateInsert,
+        validateDelete: validateDelete,
         saveRecord: saveRecord
     };
     

@@ -3,11 +3,11 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/dialog'],
+define(['N/search'],
 /**
- * @param{dialog} dialog
+ * @param{search} search
  */
-function(dialog) {
+function(search) {
     
     /**
      * Function to be executed after page is initialized.
@@ -34,46 +34,23 @@ function(dialog) {
      *
      * @since 2015.2
      */
-function fieldChanged(scriptContext) {
-  
-    if (scriptContext.fieldId === 'location' && !scriptContext.sublistId) {
-        
-
-        const location = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-        const lineCount = scriptContext.currentRecord.getLineCount({ sublistId: 'item' });
-        
-       
-        for (var i = 0; i < lineCount; i++) {
-           
-            scriptContext.currentRecord.selectLine({
-                sublistId: 'item',
-                line: i
-            });
-            scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                value: location,
-                ignoreFieldChange: true
-            });
+    function fieldChanged(scriptContext) {
+        if(scriptContext.fieldId === 'entity'){
             
-            scriptContext.currentRecord.commitLine({
-                sublistId: 'item'
+            const customerId = scriptContext.currentRecord.getValue({fieldId:'entity'});
+            var salesOrderSearch = search.create({
+                type:search.Type.SALES_ORDER,
+                filters:[
+                    ['entity','anyof',customerId],'AND',
+                    ['trandate','within','lastmonth'],'AND',
+                    ['mainline','is','T']
+                ]
             });
+
+            const count = salesOrderSearch.runPaged().count;
+            scriptContext.currentRecord.setValue({fieldId:'custbody5',value:count});
         }
-     
-
-      
-   }
-  
-  
-}
-
-
-
-
-
+    }
 
     /**
      * Function to be executed when field is slaved.
@@ -86,12 +63,21 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function postSourcing(scriptContext) {
-        
-    }
-
-
-
-
+    //     if(scriptContext.fieldId === 'entity'){
+    //         alert("hi")
+    //         const customerId = scriptContext.currentRecord.getValue({fieldId:'entity'});
+    //         var salesOrderSearch = search.create({
+    //             type:search.Type.SALES_ORDER,
+    //             filters:[
+    //                 ['entity','anyof',customerId],'AND',
+    //                 ['trandate','within','lastmonth'],'AND',
+    //                 ['mainline','is','T']
+    //             ]
+    //         });
+    //         const count = salesOrderSearch.runPaged().count;
+    //         scriptContext.currentRecord.setValue({fieldId:'custbody5',value:count});
+    //     }
+     }
 
     /**
      * Function to be executed after sublist is inserted, removed, or edited.
@@ -192,36 +178,6 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        const bodyLocation = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-
-        const lineCount = scriptContext.currentRecord.getLineCount({
-            sublistId: 'item'
-        });
-
-        for (var i = 0; i < lineCount; i++) {
-            
-            const lineLocation = scriptContext.currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                line: i
-            });
-
-            if (lineLocation !== bodyLocation) {
-                dialog.alert({
-                    title: 'Invalid loaction',
-                    message: 'line location must be same as body location'
-                    });
-                return false;
-            }
-
-            
-        }
-
-        return true;
-
-
 
     }
 
@@ -235,7 +191,7 @@ function fieldChanged(scriptContext) {
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });

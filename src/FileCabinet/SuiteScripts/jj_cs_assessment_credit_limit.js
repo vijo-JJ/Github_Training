@@ -3,11 +3,43 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/dialog'],
+
+
+
+/******************************************************************************
+********
+ * ABC Industries
+ *
+ * ${OTP-1111}: ${jj_cs_assessment_credit limit.js}
+ *
+ *
+ ******************************************************************************
+********
+ *
+ * Author: Jobin and Jismi IT Services
+ *
+ * Date Created : 24-September-2026
+ *
+ * Description : When a user saves a Sales Order, compare the order total with the customer's credit limit. If the total exceeds the limit, show a confirmation dialog asking whether they want to continue, and only save if they click OK. If the customer has no credit limit, save normally.
+ *
+ * REVISION HISTORY
+ *
+ * @version 2.0  ABC-5 : 24-September-2026 : Created the initial build by JJI0045
+ *
+ * 
+ *
+ *
+ ******************************************************************************
+*********/
+
+
+
+
+define(['N/search','N/ui/dialog'],
 /**
- * @param{dialog} dialog
+ * @param{search} search
  */
-function(dialog) {
+function(search,dialog) {
     
     /**
      * Function to be executed after page is initialized.
@@ -34,46 +66,9 @@ function(dialog) {
      *
      * @since 2015.2
      */
-function fieldChanged(scriptContext) {
-  
-    if (scriptContext.fieldId === 'location' && !scriptContext.sublistId) {
-        
+    function fieldChanged(scriptContext) {
 
-        const location = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-        const lineCount = scriptContext.currentRecord.getLineCount({ sublistId: 'item' });
-        
-       
-        for (var i = 0; i < lineCount; i++) {
-           
-            scriptContext.currentRecord.selectLine({
-                sublistId: 'item',
-                line: i
-            });
-            scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                value: location,
-                ignoreFieldChange: true
-            });
-            
-            scriptContext.currentRecord.commitLine({
-                sublistId: 'item'
-            });
-        }
-     
-
-      
-   }
-  
-  
-}
-
-
-
-
-
+    }
 
     /**
      * Function to be executed when field is slaved.
@@ -86,12 +81,8 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function postSourcing(scriptContext) {
-        
+
     }
-
-
-
-
 
     /**
      * Function to be executed after sublist is inserted, removed, or edited.
@@ -192,42 +183,34 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        const bodyLocation = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
+        const totalAmount = scriptContext.currentRecord.getValue({
+            fieldId:'total'
         });
-
-        const lineCount = scriptContext.currentRecord.getLineCount({
-            sublistId: 'item'
+        const customerId = scriptContext.currentRecord.getValue({
+            fieldId:'entity'
         });
+        const customerData = search.lookupFields({
+            type: search.Type.CUSTOMER,
+            id: customerId,
+            columns: ['creditlimit']
+        });
+        const creditLimit = customerData.creditlimit
 
-        for (var i = 0; i < lineCount; i++) {
-            
-            const lineLocation = scriptContext.currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                line: i
-            });
-
-            if (lineLocation !== bodyLocation) {
-                dialog.alert({
-                    title: 'Invalid loaction',
-                    message: 'line location must be same as body location'
-                    });
+        if (totalAmount > creditLimit){
+            const proceed = confirm('message:credit limit exceeds are you sure?');
+            if (!proceed){
                 return false;
             }
 
             
         }
-
+        
         return true;
-
-
-
     }
-
+      
     return {
         // pageInit: pageInit,
-        fieldChanged: fieldChanged,
+        // fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,

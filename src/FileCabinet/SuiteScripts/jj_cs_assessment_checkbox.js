@@ -3,11 +3,39 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/dialog'],
-/**
- * @param{dialog} dialog
- */
-function(dialog) {
+
+
+/******************************************************************************
+********
+ * ABC Industries
+ *
+ * ${OTP-1111}: ${jj_cs_assessment_checkbox.js}
+ *
+ *
+ ******************************************************************************
+********
+ *
+ * Author: Jobin and Jismi IT Services
+ *
+ * Date Created : 24-September-2026
+ *
+ * Description : Create a custom line field of type checkbox "Amount Calculation" in the sales order. If the checkbox is unchecked, then the amount should be rate*quantity. If the checkbox is checked then the amount should be (rate*quantity)/2
+ *
+ * REVISION HISTORY
+ *
+ * @version 2.0  ABC-5 : 24-September-2026 : Created the initial build by JJI0045
+ *
+ * 
+ *
+ *
+ ******************************************************************************
+*********/
+
+
+
+define([],
+
+function() {
     
     /**
      * Function to be executed after page is initialized.
@@ -34,46 +62,19 @@ function(dialog) {
      *
      * @since 2015.2
      */
-function fieldChanged(scriptContext) {
-  
-    if (scriptContext.fieldId === 'location' && !scriptContext.sublistId) {
-        
-
-        const location = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-        const lineCount = scriptContext.currentRecord.getLineCount({ sublistId: 'item' });
-        
-       
-        for (var i = 0; i < lineCount; i++) {
-           
-            scriptContext.currentRecord.selectLine({
-                sublistId: 'item',
-                line: i
-            });
-            scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                value: location,
-                ignoreFieldChange: true
-            });
-            
-            scriptContext.currentRecord.commitLine({
-                sublistId: 'item'
-            });
+    function fieldChanged(scriptContext) {
+        if(scriptContext.fieldId === 'custcol2'){
+            const amountCalc = scriptContext.currentRecord.getCurrentSublistValue({sublistId:'item',fieldId:'custcol2'});
+            const quantity = scriptContext.currentRecord.getCurrentSublistValue({sublistId:'item',fieldId:'quantity'});
+            const rate = scriptContext.currentRecord.getCurrentSublistValue({sublistId:'item',fieldId:'rate'});
+            if (amountCalc){
+                scriptContext.currentRecord.setCurrentSublistValue({sublistId:'item',fieldId:'amount',value: rate * quantity / 2});
+            }
+            else{
+                scriptContext.currentRecord.setCurrentSublistValue({sublistId:'item',fieldId:'amount',value: rate * quantity});
+            }
         }
-     
-
-      
-   }
-  
-  
-}
-
-
-
-
-
+    }
 
     /**
      * Function to be executed when field is slaved.
@@ -86,12 +87,8 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function postSourcing(scriptContext) {
-        
+
     }
-
-
-
-
 
     /**
      * Function to be executed after sublist is inserted, removed, or edited.
@@ -192,36 +189,6 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        const bodyLocation = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-
-        const lineCount = scriptContext.currentRecord.getLineCount({
-            sublistId: 'item'
-        });
-
-        for (var i = 0; i < lineCount; i++) {
-            
-            const lineLocation = scriptContext.currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                line: i
-            });
-
-            if (lineLocation !== bodyLocation) {
-                dialog.alert({
-                    title: 'Invalid loaction',
-                    message: 'line location must be same as body location'
-                    });
-                return false;
-            }
-
-            
-        }
-
-        return true;
-
-
 
     }
 
@@ -235,7 +202,7 @@ function fieldChanged(scriptContext) {
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });

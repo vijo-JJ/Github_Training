@@ -3,11 +3,11 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/ui/dialog'],
+define(['N/record','N/search','N/ui/dialog'],
 /**
- * @param{dialog} dialog
+ * @param{record} record
  */
-function(dialog) {
+function(record,search,dialog) {
     
     /**
      * Function to be executed after page is initialized.
@@ -34,46 +34,42 @@ function(dialog) {
      *
      * @since 2015.2
      */
-function fieldChanged(scriptContext) {
-  
-    if (scriptContext.fieldId === 'location' && !scriptContext.sublistId) {
-        
-
-        const location = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-        const lineCount = scriptContext.currentRecord.getLineCount({ sublistId: 'item' });
-        
-       
-        for (var i = 0; i < lineCount; i++) {
-           
-            scriptContext.currentRecord.selectLine({
-                sublistId: 'item',
-                line: i
+    function fieldChanged(scriptContext) {
+        if(scriptContext.sublistId === 'item' && scriptContext.fieldId === 'item'){
+            const itemid = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'item'
             });
+            if(!itemid){
+                return;
+            }
+            const itemData = search.lookupFields({
+                type:search.Type.INVENTORY_ITEM,
+                id:itemid,
+                columns:['custitem1','custitem2','custitem3']
+            });
+            const length = parseFloat(itemData.custitem1) || 0;
+            const breadth = parseFloat(itemData.custitem2) || 0;
+            const height = parseFloat(itemData.custitem3) || 0;
             scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                value: location,
-                ignoreFieldChange: true
+                sublistId:'item',
+                fieldId:'custcol1',
+                value: length * breadth * height
+            });
+            const rate = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'rate'
             });
             
-            scriptContext.currentRecord.commitLine({
-                sublistId: 'item'
+            scriptContext.currentRecord.setCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'amount',
+                value: rate * length * breadth * height
             });
+
+
         }
-     
-
-      
-   }
-  
-  
-}
-
-
-
-
-
+    }
 
     /**
      * Function to be executed when field is slaved.
@@ -85,13 +81,73 @@ function fieldChanged(scriptContext) {
      *
      * @since 2015.2
      */
-    function postSourcing(scriptContext) {
-        
-    }
+function postSourcing(scriptContext) {
+    if(scriptContext.sublistId === 'item' && scriptContext.fieldId === 'item'){
+        const rate = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'rate'
+            });
+            const containerBox = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'custcol1'
+            });
+            scriptContext.currentRecord.setCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'amount',
+                value: rate * containerBox
+            });
 
 
+        }
 
+    // if (
+    //     scriptContext.sublistId === 'item' &&
+    //     (scriptContext.fieldId === 'item' || scriptContext.fieldId === 'rate')
+    // ) {
 
+    //     const itemid = scriptContext.currentRecord.getCurrentSublistValue({
+    //         sublistId: 'item',
+    //         fieldId: 'item'
+    //     });
+
+    //     if (!itemid) {
+    //         return;
+    //     }
+
+    //     const itemData = search.lookupFields({
+    //         type: search.Type.ITEM,
+    //         id: itemid,
+    //         columns: ['custitem1', 'custitem2', 'custitem3']
+    //     });
+
+    //     const length = parseFloat(itemData.custitem1) || 0;
+    //     const breadth = parseFloat(itemData.custitem2) || 0;
+    //     const height = parseFloat(itemData.custitem3) || 0;
+
+    //     const containerBox = length * breadth * height;
+
+    //     const rate = parseFloat(
+    //         scriptContext.currentRecord.getCurrentSublistValue({
+    //             sublistId: 'item',
+    //             fieldId: 'rate'
+    //         })
+    //     ) || 0;
+
+    //     scriptContext.currentRecord.setCurrentSublistValue({
+    //         sublistId: 'item',
+    //         fieldId: 'custcol1',
+    //         value: containerBox,
+    //         ignoreFieldChange: true
+    //     });
+
+    //     scriptContext.currentRecord.setCurrentSublistValue({
+    //         sublistId: 'item',
+    //         fieldId: 'amount',
+    //         value: rate * containerBox,
+    //         ignoreFieldChange: true
+    //     });
+    // }
+}
 
     /**
      * Function to be executed after sublist is inserted, removed, or edited.
@@ -149,7 +205,30 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function validateLine(scriptContext) {
+        if(scriptContext.sublistId === 'item'){
+            const rate = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'rate'
+            });
+            const containerBox = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'custcol1'
+            });
+            const amount = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId:'item',
+                fieldId:'amount'
+            });
+            if (amount !== rate * containerBox ){
+                dialog.alert({
+                    title:'validation error',
+                    message:'amount must be equal to rate * container'
+                });
+                return false;
+            }
+            
 
+        }
+        return true;
     }
 
     /**
@@ -192,50 +271,20 @@ function fieldChanged(scriptContext) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        const bodyLocation = scriptContext.currentRecord.getValue({
-            fieldId: 'location'
-        });
-
-        const lineCount = scriptContext.currentRecord.getLineCount({
-            sublistId: 'item'
-        });
-
-        for (var i = 0; i < lineCount; i++) {
-            
-            const lineLocation = scriptContext.currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'location',
-                line: i
-            });
-
-            if (lineLocation !== bodyLocation) {
-                dialog.alert({
-                    title: 'Invalid loaction',
-                    message: 'line location must be same as body location'
-                    });
-                return false;
-            }
-
-            
-        }
-
-        return true;
-
-
 
     }
 
     return {
         // pageInit: pageInit,
         fieldChanged: fieldChanged,
-        // postSourcing: postSourcing,
+        postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
         // validateField: validateField,
-        // validateLine: validateLine,
+        validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });
