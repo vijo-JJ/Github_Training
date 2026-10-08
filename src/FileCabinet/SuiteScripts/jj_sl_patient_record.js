@@ -85,6 +85,8 @@ define(['N/record'],
 //     log.debug('POST Reached');
 //     scriptContext.response.write('POST WORKING');
 // }
+
+
 //             if (scriptContext.request.method === 'GET') {
 
 //     scriptContext.response.write('GET is working');
