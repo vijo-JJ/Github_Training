@@ -372,7 +372,52 @@ define([
                 });
 
                 email.send({
-                    
+                     author: Number(runtime.getCurrentUser().id),
+                    recipients: employee.email,
+                    subject: 'Pending Billing Purchase Order Delay Report',
+                    body: 'Please find attached your Purchase Order Delay Report.',
+                    attachments: [excelFile]
+                });
+                emailsSent++;
+                log.audit({
+                    title: 'EMAIL_SENT',
+                    details: 'Employee ID: ' + employeeId
+                });
+            } catch (e) {
+                log.error({
+                    title: 'EMAIL_ERROR',
+                    details: {
+                        employeeId: employeeId,
+                        error: e
+                    }
+                });
+            }
+        });
+        scriptContext.response.write(
+            'Processing completed. ' +
+            'Custom records created: ' + successfulRecords +
+            '. Emails sent: ' + emailsSent +
+            '. Failed PO records: ' + failedRecords + '.'
+        );
+    };
+    /*
+     * ESCAPE VALUES FOR EXCEL XML
+     */
+    const escapeXml = (value) => {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    };
+    return {
+        onRequest: onRequest
+    };
+});
 
 
 
